@@ -11,10 +11,16 @@ NODE_VERSION=v22.14.0
 REPO_URL=https://github.com/akshayagrg147/dispatch_tracker.git
 
 dnf update -y
-dnf install -y git nginx postgresql15-server postgresql15 openssl tar xz
+dnf install -y git nginx postgresql15-server postgresql15 postgresql15-contrib openssl tar xz
 
 if [ ! -s /var/lib/pgsql/data/PG_VERSION ]; then
   /usr/bin/postgresql-setup --initdb
+fi
+# The Amazon Linux default can use ident for loopback clients. The API uses a
+# password-authenticated database role, so prefer SCRAM for its local TCP link.
+if ! grep -q '^host all all 127\.0\.0\.1/32 scram-sha-256' /var/lib/pgsql/data/pg_hba.conf; then
+  sed -i '/^host all all 127\.0\.0\.1\/32/d' /var/lib/pgsql/data/pg_hba.conf
+  sed -i '1ihost all all 127.0.0.1/32 scram-sha-256' /var/lib/pgsql/data/pg_hba.conf
 fi
 systemctl enable --now postgresql
 
@@ -106,7 +112,7 @@ cat > /etc/nginx/conf.d/dispatch-register.conf <<'EOF'
 server {
     listen 80 default_server;
     listen [::]:80 default_server;
-    server_name _;
+    server_name dispatch-register.local;
 
     location / {
         proxy_pass http://127.0.0.1:8000;
