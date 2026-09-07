@@ -14,7 +14,9 @@ const app = express();
 const port = Number(process.env.PORT || 8000);
 const cookieName = "dispatch_session";
 const jwtSecret = process.env.JWT_SECRET || "";
-const cookieSecure = process.env.COOKIE_SECURE === "true" || process.env.NODE_ENV === "production";
+// HTTPS deployments set COOKIE_SECURE=true. The EC2 bootstrap starts with HTTP
+// behind Nginx, so production mode alone must not make login cookies unusable.
+const cookieSecure = process.env.COOKIE_SECURE === "true";
 const pgSsl = process.env.PGSSL === "true"
   ? {
       rejectUnauthorized: process.env.PGSSL_REJECT_UNAUTHORIZED !== "false",
