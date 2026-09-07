@@ -123,6 +123,24 @@ For production, use an HTTPS load balancer, keep RDS private, and store secrets
 outside the image. Amazon RDS supports SSL/TLS; when certificate verification is
 enabled, provide the RDS CA bundle with `PGSSL_CA_PATH`.
 
+### Single EC2 instance
+
+For a small internal deployment, [`infra/ec2-user-data.sh`](./infra/ec2-user-data.sh)
+bootstraps Amazon Linux 2023 with local PostgreSQL, the Node API, and Nginx. It is
+intended for one `t3.micro` instance. The launch process should restrict SSH to
+your IP, allow HTTP on port 80, and use an EBS volume with regular backups.
+
+After the instance finishes bootstrapping, SSH in and create the first admin:
+
+```bash
+cd /opt/dispatch-register
+sudo -u dispatch npm run create-user -- admin@yourcompany.in 'Choose-a-strong-password' 'Your Name' admin
+```
+
+The deployment creates a local PostgreSQL database on the instance for the first
+version. For production growth, move the database to private RDS and change only
+`DATABASE_URL`, `PGSSL`, and the server secret configuration.
+
 ## Architecture
 
 ```text
